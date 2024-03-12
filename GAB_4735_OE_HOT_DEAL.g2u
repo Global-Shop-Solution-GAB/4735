@@ -1,0 +1,44 @@
+Program.Sub.Preflight.Start
+
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+v.Local.iRet.Declare
+v.Local.sMessage.Declare
+v.Local.sSQL.Declare
+
+f.Intrinsic.Control.If(v.Caller.Hook,=,"12120")
+	f.ODBC.Connection!conx.OpenConnection(v.Ambient.PDSN,v.Ambient.PUser,v.Ambient.PPass)
+	f.Intrinsic.String.Build("select ALT_PRICE_10 from V_INV_ALT_PRICE where PART = '{0}' and LOCN = '{1}'",V.Passed.000052,V.Passed.000054,V.Local.sSQL)
+	f.ODBC.Connection!conx.OpenLocalRecordsetRO("rstSel",v.Local.sSQL)
+	f.Intrinsic.Control.If(v.ODBC.conx!rstSel.EOF,=,False)
+		f.Intrinsic.Control.If(v.ODBC.conx!rstSel.FieldValTrim!ALT_PRICE_10,<,v.Passed.000127,and,v.ODBC.conx!rstSel.FieldValTrim!ALT_PRICE_10,>,0)
+			f.Intrinsic.String.Build("Item is a Hot Deal Item!{0}Do you want to accept the Hot Price?",v.Ambient.NewLine,v.Local.sMessage)
+			f.Intrinsic.UI.Msgbox(v.Local.sMessage,"*** Hot Deal Message ***",4,v.Local.iRet)
+			' 6 is "Yes"
+			f.Intrinsic.Control.If(v.Local.iRet,=,6)
+				v.Passed.000009.Set(v.ODBC.conx!rstSel.FieldValTrim!ALT_PRICE_10)
+				
+				'set the order discount value to 0
+				'v.Passed.000005.Set("")
+				'set the apply discount to No
+				v.Passed.000119.Set("N")
+			F.Intrinsic.Control.EndIf
+		f.Intrinsic.Control.EndIf
+	f.Intrinsic.Control.EndIf
+	f.ODBC.conx!rstSel.Close
+	f.ODBC.Connection!conx.Close
+f.Intrinsic.Control.EndIf
+
+Program.Sub.Main.End
+
+Program.Sub.Comments.Start
+${$0$}$Hot Deal Pricing Notification$}$JTW$}$12/30/2016 7:44:08 AM$}$False
+${$1$}$$}$$}$0$}$12120$}$OES0201I-QTY-ORDERED-HOOK$}$12/30/2016 7:44:08 AM$}$(Program: ORD201; Screen: OES0201I)
+
+${$3$}$0$}$$}$0$}$-1$}$$}$12:00:00 AM$}$This project will check the discount price at order entry and prompt the user if they would like to use the hot deal price instead which is stored on the inventory master in alt price 10.
+
+It is fired on hook 12120
+
+Discount price is passed as 000127 as a decimal 9,5
+Program.Sub.Comments.End
